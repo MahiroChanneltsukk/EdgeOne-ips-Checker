@@ -6,6 +6,10 @@ on:
     - cron: '0 11 * * 0'
   workflow_dispatch: # 允许手动触发
 
+concurrency:
+  group: raw
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
