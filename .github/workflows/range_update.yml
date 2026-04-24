@@ -84,8 +84,8 @@ jobs:
               added_count=$(comm -13 range-cn-backup-sorted.txt range-cn-temp-sorted.txt | wc -l)
               removed_count=$(comm -23 range-cn-backup-sorted.txt range-cn-temp-sorted.txt | wc -l)
               echo "Changes detected: +$added_count / -$removed_count"
-              echo "has_changes=true"      >> $GITHUB_OUTPUT
-              echo "added_count=$added_count"   >> $GITHUB_OUTPUT
+              echo "has_changes=true"            >> $GITHUB_OUTPUT
+              echo "added_count=$added_count"    >> $GITHUB_OUTPUT
               echo "removed_count=$removed_count" >> $GITHUB_OUTPUT
 
               [ "$added_count"   -gt 0 ] && echo "=== Added (first 5) ===" && comm -13 range-cn-backup-sorted.txt range-cn-temp-sorted.txt | head -5
@@ -94,13 +94,17 @@ jobs:
             rm -f range-cn-temp-sorted.txt range-cn-backup-sorted.txt
           else
             echo "No original file found, treating as first run"
-            echo "has_changes=true"         >> $GITHUB_OUTPUT
-            echo "added_count=first_run"    >> $GITHUB_OUTPUT
+            echo "has_changes=true"          >> $GITHUB_OUTPUT
+            echo "added_count=first_run"     >> $GITHUB_OUTPUT
           fi
 
       - name: Commit changes
         if: steps.compare.outputs.has_changes == 'true'
         run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name  "github-actions[bot]"
+          git pull origin ${{ github.ref_name }} --rebase   # 工作区干净，rebase 安全
+
           mv range-cn-temp.txt range-cn.txt
 
           if [ "${{ steps.compare.outputs.added_count }}" = "first_run" ]; then
@@ -109,9 +113,6 @@ jobs:
             commit_msg="Update China IP ranges (+${{ steps.compare.outputs.added_count }}/-${{ steps.compare.outputs.removed_count }}) - $(date +'%Y-%m-%d %H:%M:%S UTC')"
           fi
 
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name  "github-actions[bot]"
-          git pull origin ${{ github.ref_name }} --rebase
           git add range-cn.txt
           git commit -m "$commit_msg"
           git push origin HEAD:${{ github.ref_name }}
@@ -124,7 +125,7 @@ jobs:
 
   update-overseas:
     runs-on: ubuntu-latest
-    needs: update-cn          # 顺序执行，避免同时 push 产生冲突
+    needs: update-cn
     concurrency:
       group: update-overseas
       cancel-in-progress: false
@@ -198,9 +199,9 @@ jobs:
               added_count=$(comm -13 range-backup-sorted.txt range-temp-sorted.txt | wc -l)
               removed_count=$(comm -23 range-backup-sorted.txt range-temp-sorted.txt | wc -l)
               echo "Changes detected: +$added_count / -$removed_count"
-              echo "has_changes=true"         >> $GITHUB_OUTPUT
-              echo "added_count=$added_count"       >> $GITHUB_OUTPUT
-              echo "removed_count=$removed_count"   >> $GITHUB_OUTPUT
+              echo "has_changes=true"            >> $GITHUB_OUTPUT
+              echo "added_count=$added_count"    >> $GITHUB_OUTPUT
+              echo "removed_count=$removed_count" >> $GITHUB_OUTPUT
 
               [ "$added_count"   -gt 0 ] && echo "=== Added (first 5) ===" && comm -13 range-backup-sorted.txt range-temp-sorted.txt | head -5
               [ "$removed_count" -gt 0 ] && echo "=== Removed (first 5) ===" && comm -23 range-backup-sorted.txt range-temp-sorted.txt | head -5
@@ -208,13 +209,17 @@ jobs:
             rm -f range-temp-sorted.txt range-backup-sorted.txt
           else
             echo "No original file found, treating as first run"
-            echo "has_changes=true"         >> $GITHUB_OUTPUT
-            echo "added_count=first_run"    >> $GITHUB_OUTPUT
+            echo "has_changes=true"          >> $GITHUB_OUTPUT
+            echo "added_count=first_run"     >> $GITHUB_OUTPUT
           fi
 
       - name: Commit changes
         if: steps.compare.outputs.has_changes == 'true'
         run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name  "github-actions[bot]"
+          git pull origin ${{ github.ref_name }} --rebase   # 工作区干净，rebase 安全
+
           mv range-temp.txt range.txt
 
           if [ "${{ steps.compare.outputs.added_count }}" = "first_run" ]; then
@@ -223,9 +228,6 @@ jobs:
             commit_msg="Update Overseas IP ranges (+${{ steps.compare.outputs.added_count }}/-${{ steps.compare.outputs.removed_count }}) - $(date +'%Y-%m-%d %H:%M:%S UTC')"
           fi
 
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name  "github-actions[bot]"
-          git pull origin ${{ github.ref_name }} --rebase
           git add range.txt
           git commit -m "$commit_msg"
           git push origin HEAD:${{ github.ref_name }}
